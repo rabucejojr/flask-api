@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 import Adafruit_DHT
 import RPi.GPIO as GPIO
-import sqlite3
+import mysql.connector
 from datetime import datetime
 
 app = Flask(__name__)
@@ -12,17 +12,22 @@ DHT_PIN = 4  # GPIO4
 
 # Define MQ137 pin
 MQ_PIN = 17  # GPIO17
+# MySQL Configuration
+mysql_config = {
+    'host': 'localhost',
+    'user': 'your_username',
+    'password': 'your_password',
+    'database': 'your_database'
+}
 
-# Setup SQLite database
-DATABASE = 'sensor_data.db'
-
-def create_table():
-    conn = sqlite3.connect(DATABASE)
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS sensor_data
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, temperature REAL, humidity REAL, gas_level REAL)''')
-    conn.commit()
-    conn.close()
+# Function to save sensor data to MySQL
+def save_sensor_data(sensor_type, value):
+    connection = mysql.connector.connect(**mysql_config)
+    cursor = connection.cursor()
+    query = "INSERT INTO sensor_data (sensor_type, value) VALUES (%s, %s)"
+    cursor.execute(query, (sensor_type, value))
+    connection.commit()
+    connection.close()
 
 def save_data(timestamp, temperature, humidity, gas_level):
     conn = sqlite3.connect(DATABASE)
